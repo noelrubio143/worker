@@ -1,7 +1,6 @@
-
 import { connect } from 'cloudflare:sockets';
 
-const UUID = 'e6e98780-4d20-4947-ab74-3f765acee726';
+const UUID = '00000000-0000-4000-8000-000000000000';
 
 export default {
   async fetch(request, env) {
@@ -17,7 +16,8 @@ export default {
 
 function handle(ws, uuid) {
   let remote = null, writer = null, first = true;
-  ws.addEventListener('message', async (e) => {
+
+  async function onMsg(e) {
     try {
       const data = new Uint8Array(
         e.data instanceof ArrayBuffer ? e.data : await e.data.arrayBuffer()
@@ -62,6 +62,11 @@ function handle(ws, uuid) {
         abort() { ws.close(); }
       })).catch(() => ws.close());
     } catch { ws.close(); }
+  }
+
+  let chain = Promise.resolve();
+  ws.addEventListener('message', (e) => {
+    chain = chain.then(() => onMsg(e)).catch(() => ws.close());
   });
   ws.addEventListener('close', () => { try { remote?.close(); } catch {} });
 }
